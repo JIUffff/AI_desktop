@@ -465,7 +465,16 @@ AI 完成任务后**不得自己说了算**，必须：
 
 ### 12.8 多代理启动指令
 
-> "读 AGENTS.md 第 12 节。当前任务是 [复杂任务描述]。请按多代理协议：先分解为子任务并生成 DAG，为每个子任务选子代理类型并定义边界，然后并行调度无依赖的子任务，整合结果后对照 PRD 的 AC 验证。"
+> 完整实操指南（含分解模板 + 本项目示例 + 集成清单）见 [docs/theory/multi-agent-practical-guide.md](docs/theory/multi-agent-practical-guide.md)。
+
+```
+"读 AGENTS.md §12，读 docs/theory/multi-agent-practical-guide.md。
+当前任务是 [复杂任务描述]。
+按 6 步流程执行：
+Step 1 读全局文档 → Step 2 用子任务模板分解 → Step 3 画 DAG 确定顺序
+→ Step 4 并行调度无依赖子代理（每个必须含职责/禁止/领地/验收）
+→ Step 5 收集产出逐个验证 → Step 6 归档 + commit。
+每步完成向我报告进度。"
 
 ---
 
