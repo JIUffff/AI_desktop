@@ -106,12 +106,8 @@ echo $HTTPS_PROXY
 # AI 推理（统一用 uv pip install）
 uv pip install transformers>=4.45.0 accelerate>=1.0.0 bitsandbytes>=0.44.0
 
-# 视觉感知
-uv pip install ultralytics>=8.3.0 opencv-python>=4.10.0 pillow>=10.4.0
-
-# PaddleOCR（单独装，有特殊依赖）
-uv pip install paddlepaddle-gpu>=2.6.0
-uv pip install paddleocr>=2.7.0
+# 图像处理
+uv pip install opencv-python>=4.10.0 pillow>=10.4.0
 
 # 执行层
 uv pip install pyautogui>=0.9.54 pywinauto>=0.6.8
@@ -168,29 +164,7 @@ python scripts/download_models.py
 
 > **⚠️ 下载必须显示实时进度**（见 AGENTS.md §13.3）：速度、已下载/总量、百分比、ETA。禁止静默下载（-q / -s）。人工需能随时判断下载是否正常、是否需要中断。
 
-> **⚠️ token 节省点**：模型 15GB，下载要 30-60 分钟。如果 AI 工作时才发现没下载，会卡住等下载，白白消耗会话时间。**必须提前人工下载好。**
-
-### 🔴 P0-9：YOLOv8m 权重
-
-| 项 | 内容 |
-|------|------|
-| 用途 | UI 元素检测（按钮/输入框/图标） |
-| 大小 | 约 50MB |
-| 存放位置 | `models/yolov8m-ui.pt` |
-| 获取方式 | ultralytics 自动下载，或手动 |
-
-```bash
-python -c "from ultralytics import YOLO; m=YOLO('yolov8m.pt'); m.save('models/yolov8m-ui.pt')"
-```
-
-### 🟢 P2-10：PaddleOCR 模型
-
-| 项 | 内容 |
-|------|------|
-| 用途 | 中文 OCR |
-| 大小 | 约 200MB |
-| 获取方式 | 首次调用自动下载，无需手动 |
-| 验证 | 运行一次 OCR 测试即可 |
+> **⚠️ token 节省点**：模型约 29GB（7 个分片），下载要 30-60 分钟。如果 AI 工作时才发现没下载，会卡住等下载，白白消耗会话时间。**必须提前人工下载好。**
 
 ---
 
@@ -228,7 +202,7 @@ python -c "from ultralytics import YOLO; m=YOLO('yolov8m.pt'); m.save('models/yo
 
 | 项 | 内容 |
 |------|------|
-| 用途 | 测试 YOLO UI 检测、OCR、SoM 标注，不用每次临时截图 |
+| 用途 | 测试 UI-TARS 端到端视觉识别，不用每次临时截图 |
 | 数量 | 20-30 张，覆盖常见场景 |
 | 存放位置 | `tests/fixtures/screenshots/` |
 
@@ -358,9 +332,7 @@ echo 然后: 复制 PROMPT.md 中的提示词给 AI 开始开发
 [ ] HTTP_PROXY / HTTPS_PROXY 环境变量已设置（见 AGENTS.md §13.2）
 
 模型检查：
-[ ] models/qwen2-vl-7b/ 目录存在，约 15GB
-[ ] models/yolov8m-ui.pt 文件存在，约 50MB
-[ ] PaddleOCR 首次调用能自动下载
+[ ] models/ui-tars-1.5-7b/ 目录存在，约 29GB（7 个分片完整）
 [ ] 下载过程有实时进度展示（速度/大小/百分比/ETA，见 AGENTS.md §13.3）
 
 权限检查：

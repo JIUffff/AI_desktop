@@ -97,5 +97,4 @@ hardware:
 
 - [架构总览](../architecture.md)
 - [Spec: 模型部署架构](../spec/model-deployment.md)
-- [Spec: ~~感知 Pipeline~~（已废弃）](../spec/perception-pipeline.md)
 - [Spec: 安全层设计](../spec/safety-layer.md)

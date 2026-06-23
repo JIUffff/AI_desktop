@@ -264,7 +264,7 @@ class GPUMonitor:
 | AWQ INT4 量化 | 显存降 40%，精度损失 <1% | model_manager.py |
 | `--enable-prefix-caching` | 多步任务吞吐 2-3x，单步延迟降 15-25% | vLLM 启动参数 |
 | KV Cache 复用 | 减少 KV 重复计算 | vlm_server.py |
-| 截图压缩到 1024x768 | 1.5x 速度 | perception/screenshot.py |
+| 截图压缩到 1024x768 | 1.5x 速度 | src/execution/screenshot.py |
 | ViT 常驻不卸载 | 省 0.3s | model_manager.py |
 | `--enforce-eager` | 图文混合更稳定 | vLLM 启动参数 |
 | `--block-size 32` | 减少内存碎片 | vLLM 启动参数 |

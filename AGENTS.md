@@ -91,8 +91,7 @@ ai-pc-control/
 │   ├── prd/                      ← Step 1: 需求定义（源头）
 │   ├── spec/                     ← Step 2: 技术设计
 │   │   ├── model-deployment.md   ←    推理层（含上下文管理 §10、自动路由 §11）
-│   │   ├── safety-layer.md       ←    安全层（含三层视觉防护）
-│   │   └── perception-pipeline.md←    感知管线（已废弃，被 UI-TARS 内置能力替代）
+│   │   └── safety-layer.md       ←    安全层（含三层视觉防护）
 │   ├── tasks/
 │   │   ├── active/               ← Step 3: 待办任务（T-01~T-20）
 │   │   └── completed/            ←    已完成任务
@@ -108,7 +107,6 @@ ai-pc-control/
 │   ├── observability/            ← 可观测性（TraceLogger / TokenUsage / AlertChecker）
 │   ├── execution/                ← 执行层（待实现）
 │   ├── safety/                   ← 安全控制层（RiskEvaluator / AuditLogger / BudgetGuard）
-│   ├── perception/               ← 视觉感知层（已废弃，被 UI-TARS 替代）
 │   └── api/                      ← 对外接口（待实现）
 ├── benchmarks/                   ← 基准测试（latency_bench / README / screenshots）
 ├── tests/
@@ -421,9 +419,9 @@ AI 完成任务后**不得自己说了算**，必须：
 
 | 要素 | 含义 | 示例 |
 |------|------|------|
-| **职责** | 要完成什么 | "实现 YOLO UI 元素检测" |
-| **能力边界** | 不能做什么（Non-Goals） | "不负责 OCR、不改 SoM 模块" |
-| **上下文范围** | 能读哪些文件、能改哪些代码 | "只能修改 src/perception/yolo_detector.py" |
+| **职责** | 要完成什么 | "实现 ActionSchema 统一适配层" |
+| **能力边界** | 不能做什么（Non-Goals） | "不碰 vlm_server.py，不改 context_manager" |
+| **上下文范围** | 能读哪些文件、能改哪些代码 | "只能修改 src/inference/action_schema.py" |
 
 ### 12.4 子代理类型选择
 
@@ -448,8 +446,8 @@ AI 完成任务后**不得自己说了算**，必须：
 每个子代理只能修改其职责范围内的文件。Spec 阶段锁定文件领地：
 
 ```
-子代理 A（感知层）→ src/perception/*
-子代理 B（推理层）→ src/inference/*
+子代理 A（推理层）→ src/inference/*
+子代理 B（执行层）→ src/execution/*
 子代理 C（安全层）→ src/safety/*
 ```
 
