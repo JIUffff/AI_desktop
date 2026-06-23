@@ -1,0 +1,32 @@
+# 模型权重
+models/
+*.pt
+*.gguf
+*.safetensors
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 虚拟环境
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# 日志
+logs/
+*.log
+
+# 截图缓存
+screenshots/
+
+# 系统文件
+.DS_Store
+Thumbs.db
