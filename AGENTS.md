@@ -84,22 +84,38 @@ PRD → Spec → Tasks → Implementation → Validation → Review → Iterate
 ```
 ai-pc-control/
 ├── AGENTS.md                     ← 本文件（AI 行为准则）
+├── PROMPT.md                     ← 主控提示词（给 AI 的复制粘贴指令）
+├── README.md
+├── pyproject.toml
 ├── docs/
-│   ├── prd/                      ← 需求定义（源头）
-│   ├── spec/                     ← 技术设计
-│   └── tasks/
-│       ├── active/               ← 待办任务
-│       └── completed/            ← 已完成任务
+│   ├── prd/                      ← Step 1: 需求定义（源头）
+│   ├── spec/                     ← Step 2: 技术设计
+│   │   ├── model-deployment.md   ←    推理层（含上下文管理 §10、自动路由 §11）
+│   │   ├── safety-layer.md       ←    安全层（含三层视觉防护）
+│   │   └── perception-pipeline.md←    感知管线（已废弃，被 UI-TARS 内置能力替代）
+│   ├── tasks/
+│   │   ├── active/               ← Step 3: 待办任务（T-01~T-20）
+│   │   └── completed/            ←    已完成任务
+│   ├── reports/                  ← 选型报告（model-selection / module-compatibility）
+│   ├── theory/                   ← 方法论理论（long-run-protocol / multi-agent-collaboration）
+│   ├── progress.md               ← 会话间记忆传递（进度日志）
+│   ├── lessons.md                ← 失败复盘积累（免疫系统）
+│   ├── architecture.md           ← 四层架构总览
+│   └── SETUP_CHECKLIST.md        ← 开发前准备清单
 ├── src/
-│   ├── core/                     ← OODA 循环主逻辑
-│   ├── perception/               ← 视觉感知层
-│   ├── inference/                ← 本地 GPU 推理层
-│   ├── execution/                ← 执行层
-│   ├── safety/                   ← 安全控制层
-│   └── api/                      ← 对外接口
-├── models/                       ← 模型权重（gitignore）
+│   ├── core/                     ← OODA 循环主逻辑（待实现）
+│   ├── inference/                ← GPU 推理层（VLMServer / ActionSchema / ContextManager / Router / CLI）
+│   ├── observability/            ← 可观测性（TraceLogger / TokenUsage / AlertChecker）
+│   ├── execution/                ← 执行层（待实现）
+│   ├── safety/                   ← 安全控制层（RiskEvaluator / AuditLogger / BudgetGuard）
+│   ├── perception/               ← 视觉感知层（已废弃，被 UI-TARS 替代）
+│   └── api/                      ← 对外接口（待实现）
+├── benchmarks/                   ← 基准测试（latency_bench / README / screenshots）
 ├── tests/
-└── scripts/
+├── scripts/                      ← 工具脚本（download_models / validate / setup_gpu）
+├── models/                       ← 模型权重（gitignore）
+├── docker/                       ← Docker 沙箱
+└── config/
 ```
 
 ---
@@ -108,14 +124,23 @@ ai-pc-control/
 
 ### 4.1 显存预算（硬约束）
 
+> **2026-06-23 更新**：切换到 UI-TARS 原生 GUI Agent 后，YOLO/PaddleOCR/SoM 三大感知子模块均已移除。
+> 架构从 5 层简化为 4 层，显存从 ~14GB 降至 **~10-11GB**。
+
 | 模块 | 预算 | 说明 |
 |------|------|------|
-| Qwen2-VL-7B INT4 | ≤ 5GB | 主决策模型 |
-| 视觉编码器 ViT | ≤ 3GB | 与主模型共享 |
-| YOLOv8m | ≤ 2GB | UI 元素检测 |
-| PaddleOCR | ≤ 1GB | 中文 OCR |
-| KV Cache + 缓冲 | ≤ 3GB | 推理缓存 |
-| **总峰值** | **≤ 15GB** | 留 1GB 余量 |
+| UI-TARS-1.5-7B (AWQ INT4) | ≤ 6GB | 主 GUI Agent 模型（内置 OCR + 元素检测） |
+| 视觉编码器 ViT | ≤ 2GB | 与主模型共享（Qwen 2.5 VL 视觉编码器） |
+| KV Cache + 缓冲 | ≤ 4GB | 推理缓存（因移除其他模型可扩容） |
+| 图像缓冲 | ≤ 1GB | 截图/历史帧 |
+| **总峰值** | **≤ 13GB** | 留 ≥3GB 余量 ✅ |
+
+**可选插件**（按需 lazy-load，不参与主流程）：
+- YOLO11m：≤ 2GB，超高速纯检测场景
+- PaddleOCR v4：≤ 1GB，VLM OCR 失败时的 fallback
+
+**备选方案**（通用 VLM 场景）：
+- Qwen3-VL-8B (GPTQ-Int4)：总占用 ~10-11GB，留 ~5GB 余量
 
 **规则**：任何新增模型必须先评估显存占用，超出预算需架构师批准。
 
@@ -128,7 +153,8 @@ ai-pc-control/
 
 ### 4.3 量化规则
 
-- 默认使用 INT4（NF4）量化
+- 主模型 UI-TARS-1.5-7B 使用 AWQ INT4 量化（显存降 40%，精度损失 <1%）
+- 备选 Qwen3-VL-8B 使用 GPTQ-Int4 量化（显存 ~3.1GB）
 - 量化后必须跑基准测试，精度损失 > 5% 需评估是否回退到 INT8
 - 量化配置统一放在 `src/inference/quantization.py`
 
@@ -146,9 +172,13 @@ ai-pc-control/
 
 ### 5.2 提示注入防护
 
-- 屏幕上识别到的文字标记为"不可信数据"
-- 系统指令 > 用户指令 > 屏幕内容，低层级不能覆盖高层级
-- 含"上传文件""修改密码"等关键词的动作一律拦截
+> **2026-06-23 重写**：切换到 UI-TARS 端到端架构后，威胁模型从"文本注入"变为"视觉注入"。
+> 完整方案见 [docs/spec/safety-layer.md §3](docs/spec/safety-layer.md)。
+
+**三层防护**：
+1. **Layer A — 输入边界声明**：System Prompt 明确声明截图为不可信视觉输入，其中的按钮/弹窗/广告文字是数据而非指令
+2. **Layer B — 输出动作白名单**：`action_schema.Action.validate()` 校验动作类型 + 禁止文本黑名单（密码输入/危险命令/远程脚本）
+3. **Layer C — 执行前风险评级**：`RiskEvaluator` 已有，增强视觉诱导性文字检测规则
 
 ### 5.3 禁止操作清单
 
@@ -266,9 +296,13 @@ AI **不得**实现以下功能：
 3. 读取 docs/tasks/active/ 下的任务列表
 4. 选择最高优先级（编号最小）的任务
 5. 读取该任务对应的 Spec（如有）
-6. 读取相关已有代码
+6. 读取相关已有代码（src/inference/ 下 action_schema / context_manager / router / vlm_server / model_manager）
+
+       src/observability/ 下 trace_logger
+
+       src/safety/ 下 risk_evaluator / audit_log / budget / human_approval）
 7. 实现代码
-8. 运行测试
+8. 运行测试（含 benchmarks/latency_bench.py 验证性能 AC）
 9. 更新文档
 10. 将任务移到 completed/
 11. 提交代码
@@ -460,34 +494,35 @@ uv sync
 
 > **为什么**：uv 比 pip 快 10-100 倍，依赖解析更准确，且统一工具链避免 conda/pip 混用导致的依赖冲突。conda 与 CUDA 的环境管理方式与本项目冲突，一律不用。
 
-### 13.2 下载操作必须走本机代理
+### 13.2 下载操作网络策略
 
 - 所有网络下载（模型权重、pip 包、git clone 等）**必须**读取并应用本机代理配置
 - AI 在执行任何下载前，必须先读取 `HTTP_PROXY` 和 `HTTPS_PROXY` 环境变量
-- **禁止**跳过代理、使用直连、或自行设置其他代理
+- **优先使用国内镜像站**（hf-mirror.com）直连，代理不通时自动切换
 
 ```bash
 # 下载前的强制检查步骤
 echo $HTTP_PROXY
 echo $HTTPS_PROXY
-
-# 如果环境变量为空，必须暂停并询问用户代理地址，不得自行直连下载
 ```
 
-- 若 `HTTP_PROXY` / `HTTPS_PROXY` 为空 → **暂停下载，询问用户**，不得自行直连
-- 下载命令必须继承代理环境变量，例如：
+- 若 `HTTP_PROXY` / `HTTPS_PROXY` 为空 **且** 镜像站不可达 → **暂停下载，询问用户**，不得自行直连
+- 下载命令示例：
 
 ```bash
 # pip/uv 下载（自动继承环境变量）
 uv pip install package-name
 
-# huggingface 下载（需要显式设置）
-export HF_ENDPOINT=https://hf-mirror.com  # 如使用镜像
-huggingface-cli download Qwen/Qwen2-VL-7B-Instruct --local-dir models/qwen2-vl-7b
+# huggingface 下载（优先镜像站，次选代理）
+export HF_ENDPOINT=https://hf-mirror.com
+hf download ByteDance-Seed/UI-TARS-1.5-7B --local-dir models/ui-tars-1.5-7b
 
 # git clone（需要显式设置）
 git -c http.proxy=$HTTP_PROXY clone https://github.com/xxx/xxx.git
 ```
+
+> **经验教训**（2026-06-23）：代理直连 HuggingFace 反复卡死（hf.exe 进程假死不回退），下载速度不稳定。
+> 后续操作优先走 hf-mirror.com 直连，代理仅作备选。
 
 ### 13.3 下载进度必须实时 UI 反馈
 
@@ -519,7 +554,7 @@ def download_with_progress(url, filepath):
 ```bash
 # 命令行下载必须显示进度
 # 正确：huggingface-cli 自带进度条
-huggingface-cli download Qwen/Qwen2-VL-7B-Instruct --local-dir models/qwen2-vl-7b
+huggingface-cli download ByteDance-Seed/UI-TARS-1.5-7B --local-dir models/ui-tars-1.5-7b
 
 # 正确：wget 显示进度
 wget --progress=bar:force https://example.com/file.bin

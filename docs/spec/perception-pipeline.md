@@ -1,14 +1,19 @@
 ---
-title: Spec — 感知 Pipeline
+title: Spec — 感知 Pipeline（已废弃）
 type: spec
 prd: 001
 created: 2026-06-22
-status: draft
+updated: 2026-06-23
+status: deprecated
 ---
 
-# Spec: 感知 Pipeline
+# Spec: ~~感知 Pipeline~~（已废弃）
 
-> 本文档由 PRD-001 的 Goals（AC-01/02/03）驱动，定义视觉感知层的技术设计。
+> **2026-06-23 废弃**：切换到 UI-TARS 端到端架构后，本文件定义的三重感知管线（YOLO→OCR→SoM）
+> 已被 UI-TARS 内置的 OCR + 元素检测 + 推理能力完全替代。
+> 本文件保留仅供历史参考，所有新代码应使用 `src/inference/vlm_server.py`。
+>
+> 详见 `docs/reports/module-compatibility-2026.html` 了解废弃原因。
 
 ---
 

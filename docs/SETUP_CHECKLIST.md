@@ -124,13 +124,13 @@ uv pip install fastapi>=0.115.0 uvicorn>=0.32.0 pydantic>=2.9.0 loguru>=0.7.2
 uv pip install pytest>=8.3.0 pytest-cov>=5.0.0 ruff>=0.7.0 mypy>=1.13.0
 ```
 
-### 🟡 P1-6：huggingface-cli（模型下载工具）
+### 🟡 P1-6：hf CLI（模型下载工具）
 
 | 项 | 内容 |
 |------|------|
-| 用途 | 下载 Qwen2-VL-7B 模型权重 |
-| 获取方式 | `uv pip install huggingface-hub` |
-| 验证 | `huggingface-cli --version` |
+| 用途 | 下载 UI-TARS-1.5-7B 模型权重 |
+| 获取方式 | `uv pip install huggingface-hub`（已安装） |
+| 验证 | `hf --version` |
 
 ### 🟡 P1-7：Wireshark 或 netstat（网络验证工具）
 
@@ -144,14 +144,14 @@ uv pip install pytest>=8.3.0 pytest-cov>=5.0.0 ruff>=0.7.0 mypy>=1.13.0
 
 ## 三、模型权重（最大头，必须提前下载）
 
-### 🔴 P0-8：Qwen2-VL-7B-Instruct 模型权重
+### 🔴 P0-8：UI-TARS-1.5-7B 模型权重
 
 | 项 | 内容 |
 |------|------|
-| 用途 | 主决策模型，意图解析 + 动作决策 |
-| 大小 | 约 15GB（FP16 原版），INT4 量化后约 5GB |
-| 存放位置 | `models/qwen2-vl-7b/` |
-| 获取方式 | HuggingFace 下载 |
+| 用途 | 主 GUI Agent 模型，截图→推理→动作（内置 OCR + 检测 + 推理） |
+| 大小 | 约 29GB（7 个分片），AWQ INT4 量化后约 6GB 显存 |
+| 存放位置 | `models/ui-tars-1.5-7b/` |
+| 获取方式 | `hf download ByteDance-Seed/UI-TARS-1.5-7B --local-dir models/ui-tars-1.5-7b` |
 
 ```bash
 # 下载前必须确认代理（见 AGENTS.md §13.2）

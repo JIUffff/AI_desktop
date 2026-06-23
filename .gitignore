@@ -27,6 +27,10 @@ logs/
 # 截图缓存
 screenshots/
 
+# 基准测试数据（截图和结果不入库，体积大且环境相关）
+benchmarks/screenshots/
+benchmarks/results/
+
 # 系统文件
 .DS_Store
 Thumbs.db

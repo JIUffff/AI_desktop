@@ -12,13 +12,13 @@
 
 【第一步：必读——恢复上下文】
 进入项目后，严格按以下顺序读取文件，不得跳过任何一步：
-1. 读取 D:\workspace\Codex\AI_Desktop\AGENTS.md —— 你的行为准则（全部 12 节，含黄金法则、七步工作流、显存预算、安全红线、长程自循环协议第 11 节、多代理协作协议第 12 节）
+1. 读取 D:\workspace\Codex\AI_Desktop\AGENTS.md —— 你的行为准则（全部 13 节，含黄金法则、七步工作流、显存预算、安全红线、长程自循环协议第 11 节、多代理协作协议第 12 节、环境规范第 13 节）
 2. 读取 D:\workspace\Codex\AI_Desktop\docs\progress.md —— 了解之前做到哪了，下次从哪接续
 3. 读取 D:\workspace\Codex\AI_Desktop\docs\lessons.md —— 了解之前犯过什么错，避免重犯
 4. 读取 D:\workspace\Codex\AI_Desktop\docs\prd\001-local-gpu-pc-control.md —— PRD，理解 Goals / Non-Goals / Acceptance Criteria（AC-01~AC-14）
-5. 读取 D:\workspace\Codex\AI_Desktop\docs\architecture.md —— 五层架构总览与显存分配方案
+5. 读取 D:\workspace\Codex\AI_Desktop\docs\architecture.md —— 四层架构总览与显存分配方案
 6. 列出 D:\workspace\Codex\AI_Desktop\docs\tasks\active\ 下的所有任务文件，找到编号最小（最高优先级）的待办任务
-7. 读取该任务对应的 Spec（如任务关联 spec/model-deployment.md 等）
+7. 读取 D:\workspace\Codex\AI_Desktop\docs\spec\model-deployment.md —— 推理层设计（含上下文管理、自动路由）；读取该任务对应的其他 Spec（如有）
 
 【第二步：执行——单任务闭环】
 取到任务 T-XX 后，严格按以下闭环执行：
@@ -26,7 +26,7 @@
 2. 读取该任务的验收标准
 3. 读取相关已有代码（如 src/ 下已有模块）
 4. 实现代码，严格遵守 AGENTS.md 的约束：
-   - 显存预算：总峰值 ≤ 15GB（见 AGENTS.md §4.1）
+   - 显存预算：总峰值 ≤ 13GB（见 AGENTS.md §4.1）
    - 本地化红线：禁止调用任何云端 AI API（见 AGENTS.md §4.2）
    - 安全红线：禁止无人工确认的删除/发送/支付（见 AGENTS.md §5.3）
    - 代码规范：ruff format / 类型标注 / docstring（见 AGENTS.md §6）

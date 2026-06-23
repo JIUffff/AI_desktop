@@ -2,13 +2,13 @@
 task_id: T-08
 title: 实现 SoM 标注生成
 priority: 8
-status: pending
+status: cancelled
 depends_on: [T-06, T-07]
 spec: spec/perception-pipeline.md
 estimate: 0.5d
 ---
 
-# T-08: 实现 SoM 标注生成
+# T-08: ~~SoM 标注生成~~（已取消 — UI-TARS 端到端不需要）
 
 ## 描述
 在截图上为每个检测到的 UI 元素画编号框，生成 Set-of-Mark 标注图。

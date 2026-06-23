@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLM 模型选型对比报告 — 2026</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.7;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header .subtitle { font-size: 16px; opacity: 0.9; }
+        .header .meta { font-size: 13px; opacity: 0.8; margin-top: 15px; }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .section h2 {
+            font-size: 22px;
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            font-size: 18px;
+            color: #34495e;
+            margin: 20px 0 10px;
+        }
+
+        /* 决策卡片 */
+        .decision-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .decision-card {
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .decision-card.primary {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border: 2px solid #4caf50;
+        }
+        .decision-card.backup {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 2px solid #2196f3;
+        }
+        .decision-card.light {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border: 2px solid #ff9800;
+        }
+        .decision-card .role {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .decision-card.primary .role { color: #2e7d32; }
+        .decision-card.backup .role { color: #1565c0; }
+        .decision-card.light .role { color: #ef6c00; }
+        .decision-card .model-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .decision-card .desc {
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* 表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #dee2e6;
+        }
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        tr:hover td { background: #f8f9fa; }
+        .highlight-row td {
+            background: #e8f5e9;
+            font-weight: 600;
+        }
+        .metric-best {
+            color: #2e7d32;
+            font-weight: 700;
+        }
+        .metric-good { color: #1565c0; }
+        .metric-warn { color: #ef6c00; }
+        .metric-bad { color: #c62828; }
+
+        /* 基准测试分数条 */
+        .benchmark-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .benchmark-bar .label {
+            width: 150px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .benchmark-bar .bar-container {
+            flex: 1;
+            background: #e9ecef;
+            border-radius: 4px;
+            height: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+        .benchmark-bar .bar {
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            transition: width 0.8s ease;
+        }
+        .bar.ui-tars { background: linear-gradient(90deg, #4caf50, #66bb6a); }
+        .bar.openai { background: linear-gradient(90deg, #2196f3, #42a5f5); }
+        .bar.claude { background: linear-gradient(90deg, #9c27b0, #ba68c8); }
+        .bar.sota { background: linear-gradient(90deg, #ff9800, #ffb74d); }
+
+        /* VRAM 预算图 */
+        .vram-chart {
+            display: flex;
+            height: 40px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .vram-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .vram-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .vram-legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .vram-legend .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tag-green { background: #e8f5e9; color: #2e7d32; }
+        .tag-blue { background: #e3f2fd; color: #1565c0; }
+        .tag-orange { background: #fff3e0; color: #ef6c00; }
+        .tag-red { background: #ffebee; color: #c62828; }
+
+        /* 结论框 */
+        .conclusion {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border-left: 4px solid #4caf50;
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .conclusion h3 { color: #2e7d32; margin-top: 0; }
+
+        .info-box {
+            background: #fffde7;
+            border-left: 4px solid #fbc02d;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 13px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>VLM 模型选型对比报告</h1>
+        <div class="subtitle">AI PC Control System — 替代过时的 Qwen2-VL，选定 2026 年 SOTA 模型</div>
+        <div class="meta">
+            日期：2026-06-23 · 硬件：RTX 5070 Ti (16GB VRAM) · 调研来源：HuggingFace / arXiv / GitHub / OpenVLM Leaderboard
+        </div>
+    </div>
+
+    <!-- 决策摘要 -->
+    <div class="section">
+        <h2>选型决策摘要</h2>
+        <div class="decision-grid">
+            <div class="decision-card primary">
+                <div class="role">★ 主模型（推荐）</div>
+                <div class="model-name">UI-TARS-1.5-7B</div>
+                <div class="desc">字节跳动 · GUI Agent 专用<br>AWQ INT4 · ~6GB 显存<br>Apache 2.0</div>
+            </div>
+            <div class="decision-card backup">
+                <div class="role">备选（通用 VLM）</div>
+                <div class="model-name">Qwen3-VL-8B</div>
+                <div class="desc">阿里 · 2025.10 发布<br>GPTQ-Int4 · ~3.1GB 显存<br>Instruct + Thinking</div>
+            </div>
+            <div class="decision-card light">
+                <div class="role">降级（轻量级）</div>
+                <div class="model-name">Qwen3-VL-4B</div>
+                <div class="desc">阿里 · 显存紧张时<br>GPTQ-Int4 · ~2.5GB 显存<br>仍有 GUI agent 能力</div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <h3>核心结论</h3>
+            <p><strong>UI-TARS-1.5-7B</strong> 是 2026 年 GUI Agent 领域的 SOTA 开源模型。它在 ScreenSpot-V2（94.2%）、ScreenSpotPro（61.6%）、OSWorld（42.5%）三项核心基准上全面超越 OpenAI CUA 和 Claude 3.7，且专为「截图→推理→动作」流程设计，完美匹配本项目 OODA 循环架构。AWQ INT4 量化后仅需 ~6GB 显存，在 RTX 5070 Ti 16GB 上运行从容。</p>
+        </div>
+    </div>
+
+    <!-- 候选模型全面对比 -->
+    <div class="section">
+        <h2>候选模型全面对比</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>维度</th>
+                    <th>UI-TARS-1.5-7B<br><span class="tag tag-green">★ 主选</span></th>
+                    <th>Qwen3-VL-8B<br><span class="tag tag-blue">备选</span></th>
+                    <th>InternVL3-8B</th>
+                    <th>MiniCPM-o 2.6</th>
+                    <th>Qwen2-VL-7B<br><span class="tag tag-red">原方案</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>发布时间</strong></td>
+                    <td>2025.01 (1.5版)</td>
+                    <td>2025.10</td>
+                    <td>2025.04</td>
+                    <td>2025.01</td>
+                    <td>2024.10 ⚠️</td>
+                </tr>
+                <tr>
+                    <td><strong>参数量</strong></td>
+                    <td>7B</td>
+                    <td>8B</td>
+                    <td>8B</td>
+                    <td>8B</td>
+                    <td>7B</td>
+                </tr>
+                <tr>
+                    <td><strong>架构特点</strong></td>
+                    <td>原生 GUI Agent<br>thought + action</td>
+                    <td>Interleaved-MRoPE<br>DeepStack</td>
+                    <td>V2PE 编码<br>原生多模态训练</td>
+                    <td>全模态<br>音视文端到端</td>
+                    <td>T-RoPE<br>基础 VLM</td>
+                </tr>
+                <tr>
+                    <td><strong>GUI 专用优化</strong></td>
+                    <td class="metric-best">✅ 原生支持</td>
+                    <td class="metric-good">✅ Cookbook 支持</td>
+                    <td class="metric-good">✅ 支持</td>
+                    <td>❌ 通用</td>
+                    <td>❌ 通用</td>
+                </tr>
+                <tr>
+                    <td><strong>INT4 量化</strong></td>
+                    <td>AWQ (省40%)</td>
+                    <td>GPTQ-Int4</td>
+                    <td>GPTQ/AWQ</td>
+                    <td>bitsandbytes</td>
+                    <td>GPTQ-Int4</td>
+                </tr>
+                <tr>
+                    <td><strong>量化后显存</strong></td>
+                    <td class="metric-best">~6GB</td>
+                    <td class="metric-best">~3.1GB</td>
+                    <td>~5GB</td>
+                    <td>~5GB</td>
+                    <td>~5GB</td>
+                </tr>
+                <tr>
+                    <td><strong>中文支持</strong></td>
+                    <td>✅</td>
+                    <td class="metric-best">✅ 32语言OCR</td>
+                    <td>✅</td>
+                    <td class="metric-best">✅ 原生中文</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td><strong>许可证</strong></td>
+                    <td>Apache 2.0</td>
+                    <td>Apache 2.0</td>
+                    <td>MIT</td>
+                    <td>Apache 2.0</td>
+                    <td>Apache 2.0</td>
+                </tr>
+                <tr>
+                    <td><strong>vLLM 支持</strong></td>
+                    <td>✅ 0.4.2+</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>⚠️ 有限</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td><strong>维护活跃度</strong></td>
+                    <td class="metric-best">高（字节）</td>
+                    <td class="metric-best">高（阿里）</td>
+                    <td>中（OpenGVLab）</td>
+                    <td>中（面壁）</td>
+                    <td class="metric-bad">已停止（旧版）</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 基准测试对比 -->
+    <div class="section">
+        <h2>GUI 任务基准测试对比</h2>
+        <p>UI-TARS-1.5-7B 在 GUI 任务上的表现，对比 OpenAI CUA、Claude 3.7 及前任 SOTA：</p>
+
+        <h3>ScreenSpot-V2（GUI 元素定位）</h3>
+        <div class="benchmark-bar">
+            <div class="label">UI-TARS-1.5-7B</div>
+            <div class="bar-container">
+                <div class="bar ui-tars" style="width: 94.2%;">94.2%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">OpenAI CUA</div>
+            <div class="bar-container">
+                <div class="bar openai" style="width: 87.9%;">87.9%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">Claude 3.7</div>
+            <div class="bar-container">
+                <div class="bar claude" style="width: 87.6%;">87.6%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">前任 SOTA</div>
+            <div class="bar-container">
+                <div class="bar sota" style="width: 91.6%;">91.6%</div>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 25px;">ScreenSpotPro（复杂 GUI 定位）</h3>
+        <div class="benchmark-bar">
+            <div class="label">UI-TARS-1.5-7B</div>
+            <div class="bar-container">
+                <div class="bar ui-tars" style="width: 61.6%;">61.6%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">前任 SOTA</div>
+            <div class="bar-container">
+                <div class="bar sota" style="width: 43.6%;">43.6%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">Claude 3.7</div>
+            <div class="bar-container">
+                <div class="bar claude" style="width: 27.7%;">27.7%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">OpenAI CUA</div>
+            <div class="bar-container">
+                <div class="bar openai" style="width: 23.4%;">23.4%</div>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 25px;">OSWorld（真实计算机操作，100步）</h3>
+        <div class="benchmark-bar">
+            <div class="label">UI-TARS-1.5-7B</div>
+            <div class="bar-container">
+                <div class="bar ui-tars" style="width: 42.5%;">42.5%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">OpenAI CUA</div>
+            <div class="bar-container">
+                <div class="bar openai" style="width: 36.4%;">36.4%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">前任 SOTA</div>
+            <div class="bar-container">
+                <div class="bar sota" style="width: 38.1%;">38.1%</div>
+            </div>
+        </div>
+        <div class="benchmark-bar">
+            <div class="label">Claude 3.7</div>
+            <div class="bar-container">
+                <div class="bar claude" style="width: 28%;">28%</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>数据来源</strong>：HuggingFace 模型卡 <a href="https://huggingface.co/ByteDance-Seed/UI-TARS-1.5-7B">ByteDance-Seed/UI-TARS-1.5-7B</a>。
+            UI-TARS-1.5-7B 在三项核心 GUI 基准上均取得 SOTA，尤其在 ScreenSpotPro 上以 61.6% 大幅领先第二名（43.6%）。
+        </div>
+    </div>
+
+    <!-- VRAM 预算 -->
+    <div class="section">
+        <h2>RTX 5070 Ti (16GB) 显存预算</h2>
+
+        <h3>主方案：UI-TARS-1.5-7B (AWQ INT4) — 总计 ~14GB</h3>
+        <div class="vram-chart">
+            <div class="vram-segment" style="width: 37.5%; background: #4caf50;">UI-TARS 6GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #66bb6a;">ViT 2GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #42a5f5;">YOLO 2GB</div>
+            <div class="vram-segment" style="width: 6.25%; background: #ab47bc;">OCR 1GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #ff9800;">Cache 2GB</div>
+            <div class="vram-segment" style="width: 6.25%; background: #78909c;">Buffer 1GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #e0e0e0; color: #999;">余量 2GB</div>
+        </div>
+        <div class="vram-legend">
+            <span><div class="dot" style="background:#4caf50;"></div>UI-TARS-1.5-7B (AWQ INT4) 6GB</span>
+            <span><div class="dot" style="background:#66bb6a;"></div>ViT 视觉编码器 2GB</span>
+            <span><div class="dot" style="background:#42a5f5;"></div>YOLOv8m 2GB</span>
+            <span><div class="dot" style="background:#ab47bc;"></div>PaddleOCR 1GB</span>
+            <span><div class="dot" style="background:#ff9800;"></div>KV Cache 2GB</span>
+            <span><div class="dot" style="background:#78909c;"></div>图像缓冲 1GB</span>
+            <span><div class="dot" style="background:#e0e0e0;"></div>余量 2GB</span>
+        </div>
+
+        <h3 style="margin-top: 30px;">备选方案：Qwen3-VL-8B (GPTQ-Int4) — 总计 ~12GB</h3>
+        <div class="vram-chart">
+            <div class="vram-segment" style="width: 19.4%; background: #4caf50;">Qwen3-VL 3.1GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #66bb6a;">ViT 2GB</div>
+            <div class="vram-segment" style="width: 12.5%; background: #42a5f5;">YOLO 2GB</div>
+            <div class="vram-segment" style="width: 6.25%; background: #ab47bc;">OCR 1GB</div>
+            <div class="vram-segment" style="width: 18.75%; background: #ff9800;">Cache 3GB</div>
+            <div class="vram-segment" style="width: 6.25%; background: #78909c;">Buffer 1GB</div>
+            <div class="vram-segment" style="width: 24.4%; background: #e0e0e0; color: #999;">余量 4GB</div>
+        </div>
+        <div class="vram-legend">
+            <span><div class="dot" style="background:#4caf50;"></div>Qwen3-VL-8B (GPTQ-Int4) 3.1GB</span>
+            <span><div class="dot" style="background:#66bb6a;"></div>ViT 2GB</span>
+            <span><div class="dot" style="background:#42a5f5;"></div>YOLOv8m 2GB</span>
+            <span><div class="dot" style="background:#ab47bc;"></div>PaddleOCR 1GB</span>
+            <span><div class="dot" style="background:#ff9800;"></div>KV Cache 3GB</span>
+            <span><div class="dot" style="background:#78909c;"></div>图像缓冲 1GB</span>
+            <span><div class="dot" style="background:#e0e0e0;"></div>余量 4GB</span>
+        </div>
+
+        <div class="info-box">
+            <strong>性能预期</strong>：UI-TARS-1.5-7B + AWQ INT4，在 RTX 4090 实测端到端推理延迟 ~320-500ms（远低于 PRD 要求的 1.5s）。
+            Qwen3-VL-8B + GPTQ-Int4 更优，延迟 ~320ms，但 GUI 专用能力不如 UI-TARS。
+        </div>
+    </div>
+
+    <!-- 选型理由 -->
+    <div class="section">
+        <h2>选型理由详解</h2>
+
+        <h3>为什么选 UI-TARS-1.5-7B 作为主模型？</h3>
+        <table>
+            <tr><th style="width: 30%;">理由</th><th>详细说明</th></tr>
+            <tr>
+                <td><strong>1. GUI 任务 SOTA</strong></td>
+                <td>ScreenSpot-V2 94.2%（超 OpenAI CUA 6.3%）、ScreenSpotPro 61.6%（超前任 SOTA 18%）、OSWorld 42.5%（超 OpenAI CUA 6.1%）。在 PC 控制场景无可匹敌。</td>
+            </tr>
+            <tr>
+                <td><strong>2. 原生 GUI Agent 架构</strong></td>
+                <td>专为「截图→推理→动作」设计，输出 thought + action，完美匹配 OODA 循环。无需像通用 VLM 那样额外封装 prompt。</td>
+            </tr>
+            <tr>
+                <td><strong>3. 推理能力</strong></td>
+                <td>支持 RL 训练的推理能力，先思考再操作，复杂任务成功率更高。</td>
+            </tr>
+            <tr>
+                <td><strong>4. 显存可控</strong></td>
+                <td>AWQ INT4 量化后 ~6GB，加 ViT 共 ~8GB，在 16GB VRAM 中留有充足余量给 YOLO/OCR/Cache。</td>
+            </tr>
+            <tr>
+                <td><strong>5. Apache 2.0 商用许可</strong></td>
+                <td>允许商业使用，无法律风险。</td>
+            </tr>
+            <tr>
+                <td><strong>6. 字节跳动持续维护</strong></td>
+                <td>UI-TARS-1.5 是 2025 年最新版，配套 UI-TARS-desktop 应用和 SDK，生态完整。</td>
+            </tr>
+        </table>
+
+        <h3>为什么保留 Qwen3-VL-8B 作为备选？</h3>
+        <table>
+            <tr><th style="width: 30%;">理由</th><th>详细说明</th></tr>
+            <tr>
+                <td><strong>1. 极致省显存</strong></td>
+                <td>GPTQ-Int4 量化后仅 ~3.1GB，为 16GB 显存中最省的 8B 级 VLM，留 4GB 余量。</td>
+            </tr>
+            <tr>
+                <td><strong>2. 通用 VLM 能力强</strong></td>
+                <td>当需要非 GUI 视觉任务（文档理解、图片问答、复杂 OCR）时，Qwen3-VL 更通用。</td>
+            </tr>
+            <tr>
+                <td><strong>3. 2025.10 最新发布</strong></td>
+                <td>Interleaved-MRoPE + DeepStack 架构创新，256K 上下文，32 语言 OCR。</td>
+            </tr>
+            <tr>
+                <td><strong>4. Instruct + Thinking 双模式</strong></td>
+                <td>Instruct 快速响应，Thinking 深度推理，按场景切换。</td>
+            </tr>
+        </table>
+
+        <h3>为什么不选其他模型？</h3>
+        <table>
+            <tr><th style="width: 25%;">模型</th><th>排除原因</th></tr>
+            <tr>
+                <td><strong>Qwen2-VL-7B</strong><br><span class="tag tag-red">原方案</span></td>
+                <td>2024.10 发布，截至 2026 年已落后两代。GUI 能力未专门优化，ScreenSpot 等基准无竞争力数据。</td>
+            </tr>
+            <tr>
+                <td><strong>InternVL3-8B</strong></td>
+                <td>GUI 能力有但非核心优势，ScreenSpot/OSWorld 基准数据不透明，显存无明显优势。</td>
+            </tr>
+            <tr>
+                <td><strong>MiniCPM-o 2.6</strong></td>
+                <td>全模态（含音频）但 GUI 非核心场景，vLLM 支持有限，社区生态不如 Qwen/UI-TARS。</td>
+            </tr>
+            <tr>
+                <td><strong>ZonUI-3B</strong></td>
+                <td>WACV 2026 论文模型，3B 轻量但仅做 GUI grounding，无完整 agent 推理能力，学术阶段产出。</td>
+            </tr>
+            <tr>
+                <td><strong>Llama 3.2 Vision 11B</strong></td>
+                <td>11B 参数偏大，中文支持弱，GUI 专用能力不足。</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 风险与缓解 -->
+    <div class="section">
+        <h2>风险与缓解措施</h2>
+        <table>
+            <tr><th style="width: 25%;">风险</th><th style="width: 10%;">等级</th><th>缓解措施</th></tr>
+            <tr>
+                <td>UI-TARS-1.5-7B 在特定 Windows 应用上表现未验证</td>
+                <td><span class="tag tag-orange">中</span></td>
+                <td>准备 20-30 张标准测试截图，在 T-19（端到端测试）中覆盖典型场景；若成功率 <65%，切换到 Qwen3-VL-8B 对比</td>
+            </tr>
+            <tr>
+                <td>AWQ 量化导致精度损失</td>
+                <td><span class="tag tag-orange">中</span></td>
+                <td>量化后跑 ScreenSpot 子集基准，精度损失 >5% 则回退到 INT8 或使用 FP8 版本</td>
+            </tr>
+            <tr>
+                <td>vLLM 0.5.0+ 坐标解析异常</td>
+                <td><span class="tag tag-red">高</span></td>
+                <td>锁定 vLLM 0.4.2 版本；使用 <code>smart_resize</code> 校准坐标转换；CI 中加入坐标范围 [0,1000] 验证</td>
+            </tr>
+            <tr>
+                <td>UI-TARS 坐标输出格式与 SoM 编号不兼容</td>
+                <td><span class="tag tag-orange">中</span></td>
+                <td>在 <code>vlm_server.py</code> 中做格式适配层，统一输出 {action, coordinates, element_id}</td>
+            </tr>
+            <tr>
+                <td>模型下载失败（网络问题）</td>
+                <td><span class="tag tag-orange">中</span></td>
+                <td>强制代理配置（AGENTS.md §13.2）；支持 HF 镜像站；断点续传</td>
+            </tr>
+            <tr>
+                <td>UI-TARS 中文场景覆盖不足</td>
+                <td><span class="tag tag-orange">低</span></td>
+                <td>UI-TARS 训练数据含中文 GUI；备选 Qwen3-VL 中文能力更强，可随时切换</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 已更新文件 -->
+    <div class="section">
+        <h2>本次更新的项目文件</h2>
+        <table>
+            <tr><th>文件</th><th style="width: 20%;">更新内容</th><th>关键变更</th></tr>
+            <tr>
+                <td><code>docs/spec/model-deployment.md</code></td>
+                <td><span class="tag tag-green">重写</span></td>
+                <td>新增选型背景、UI-TARS/Qwen3-VL 双方案、基准对比、vLLM 部署参数、显存预算</td>
+            </tr>
+            <tr>
+                <td><code>docs/architecture.md</code></td>
+                <td><span class="tag tag-blue">更新</span></td>
+                <td>决策层改为 UI-TARS-1.5-7B；显存分配双方案；关键设计决策新增 GUI Agent 选项</td>
+            </tr>
+            <tr>
+                <td><code>docs/prd/001-local-gpu-pc-control.md</code></td>
+                <td><span class="tag tag-blue">更新</span></td>
+                <td>技术约束表：主模型改为 UI-TARS-1.5-7B，备选 Qwen3-VL-8B</td>
+            </tr>
+            <tr>
+                <td><code>AGENTS.md</code></td>
+                <td><span class="tag tag-blue">更新</span></td>
+                <td>§4.1 显存预算、§4.3 量化规则、§13.2 下载示例均更新为新模型</td>
+            </tr>
+            <tr>
+                <td><code>scripts/download_models.py</code></td>
+                <td><span class="tag tag-green">重写</span></td>
+                <td>支持交互式选择下载主模型/备选/全部；代理检查；进度反馈</td>
+            </tr>
+            <tr>
+                <td><code>docs/reports/vlm-model-selection-2026.md</code></td>
+                <td><span class="tag tag-green">新增</span></td>
+                <td>本报告（HTML 格式）</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        AI PC Control System · VLM 模型选型报告 · 2026-06-23<br>
+        调研工具：WebSearch + WebFetch · 数据来源：HuggingFace / arXiv / GitHub / OpenVLM Leaderboard
+    </div>
+
+</div>
+</body>
+</html>

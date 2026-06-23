@@ -2,13 +2,13 @@
 task_id: T-07
 title: 集成 PaddleOCR
 priority: 7
-status: pending
+status: pending（降级为可选 fallback）
 depends_on: [T-02]
 spec: spec/perception-pipeline.md
 estimate: 0.5d
 ---
 
-# T-07: 集成 PaddleOCR
+# T-07: 集成 PaddleOCR（可选 fallback）
 
 ## 描述
 集成 PaddleOCR 识别界面中文文字。

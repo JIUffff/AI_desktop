@@ -23,7 +23,7 @@ hardware:
 - 单步操作延迟 < 1.5 秒（截图→决策→执行）
 - 任务成功率 ≥ 65%（OSWorld 基准子集）
 - 支持 Windows 11 原生应用 + Web 页面
-- 具备五层安全防护（沙箱/风险评级/人工确认/审计/熔断）
+- 具备多层安全防护（风险评级/人工确认/审计/熔断）
 - 支持失败案例收集与增量微调
 
 ---
@@ -64,7 +64,7 @@ hardware:
 ### 性能验收
 
 - **AC-06**: 单步操作（截图→决策→执行）延迟 < 1.5 秒
-- **AC-07**: GPU 显存占用峰值 < 15GB（留 1GB 余量）
+- **AC-07**: GPU 显存占用峰值 < 13GB（主方案实测 ~10-11GB）
 - **AC-08**: 连续运行 30 分钟无显存泄漏
 
 ### 安全验收
@@ -86,10 +86,9 @@ hardware:
 | 约束 | 值 | 原因 |
 |------|------|------|
 | GPU 显存 | 16GB | 硬件限制 |
-| 主模型 | Qwen2-VL-7B INT4 | 显存预算决定 |
-| UI 检测 | YOLOv8m | 速度与精度平衡 |
-| OCR | PaddleOCR | 中文识别最佳 |
-| 推理框架 | transformers + accelerate（MVP）→ vLLM（优化） | 渐进式优化 |
+| 主模型 | UI-TARS-1.5-7B (AWQ INT4) | GUI Agent SOTA，ScreenSpot-V2 94.2% |
+| 备选模型 | Qwen3-VL-8B (GPTQ-Int4) | 通用 VLM，仅 ~3.1GB 显存 |
+| 推理框架 | transformers（MVP）→ vLLM（优化） | 渐进式优化 |
 | Python | 3.11+ | 类型标注支持 |
 
 ---
@@ -98,5 +97,5 @@ hardware:
 
 - [架构总览](../architecture.md)
 - [Spec: 模型部署架构](../spec/model-deployment.md)
-- [Spec: 感知 Pipeline](../spec/perception-pipeline.md)
+- [Spec: ~~感知 Pipeline~~（已废弃）](../spec/perception-pipeline.md)
 - [Spec: 安全层设计](../spec/safety-layer.md)

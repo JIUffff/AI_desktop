@@ -5,15 +5,12 @@ description = "Local-GPU AI PC Control System"
 requires-python = ">=3.11"
 
 dependencies = [
-    # AI 推理
+    # AI 推理（核心）
     "torch>=2.5.0",
     "transformers>=4.45.0",
     "accelerate>=1.0.0",
     "bitsandbytes>=0.44.0",
-    # 视觉感知
-    "ultralytics>=8.3.0",
-    "paddleocr>=2.7.0",
-    "paddlepaddle-gpu>=2.6.0",
+    # 图像处理
     "opencv-python>=4.10.0",
     "pillow>=10.4.0",
     # 执行层
@@ -34,6 +31,12 @@ dev = [
     "pytest-cov>=5.0.0",
     "ruff>=0.7.0",
     "mypy>=1.13.0",
+]
+# 可选插件（UI-TARS 内置感知能力后不再作为主流程必需）
+plugins = [
+    "ultralytics>=8.3.0",     # YOLO11m 检测插件
+    "paddleocr>=2.7.0",       # PaddleOCR 文字识别 fallback
+    "paddlepaddle-gpu>=2.6.0",
 ]
 
 [tool.ruff]

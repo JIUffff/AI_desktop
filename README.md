@@ -32,8 +32,8 @@ python -m src.api.server
 
 ## 技术栈
 
-- **主模型**: Qwen2-VL-7B (INT4 量化)
-- **UI 检测**: YOLOv8m
-- **OCR**: PaddleOCR
+- **主模型**: UI-TARS-1.5-7B (AWQ INT4 量化，GUI Agent SOTA)
+- **备选模型**: Qwen3-VL-8B (GPTQ-Int4，通用 VLM)
+- **OCR**: UI-TARS 内置（PaddleOCR 作为可选 fallback）
 - **执行**: PyAutoGUI + Pywinauto + Playwright
 - **GPU**: NVIDIA RTX 5070 Ti (16GB, CUDA 12.8)
