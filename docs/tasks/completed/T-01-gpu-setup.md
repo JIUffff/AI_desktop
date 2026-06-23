@@ -2,7 +2,7 @@
 task_id: T-01
 title: GPU 环境初始化
 priority: 1
-status: pending
+status: completed
 depends_on: []
 spec: spec/model-deployment.md
 estimate: 0.5d
